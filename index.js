@@ -5,6 +5,9 @@ Object.assign(THREE, { OrbitControls });
 
 const EARTH_RADIUS_KM = 6371;
 const ISS_SIZE_KM = 100;
+const SATELLITE_SIZE_KM = 50;
+
+let nextId = 1;
 
 const globe = new ThreeGlobe()
 .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
@@ -39,24 +42,37 @@ scene.add(new THREE.AmbientLight(0xcccccc, Math.PI));
 // Add camera:
 const camera = new THREE.PerspectiveCamera();
 camera.aspect = window.innerWidth / window.innerHeight;
-camera.updateProjectionMatrix();
 camera.position.z = 300;
+camera.near = 0.1;
+camera.far = 10000;
+camera.updateProjectionMatrix();
 
 // Add camera controls:
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-// Add ISS:
+// Add ISS mesh:
 const issGeometry = new THREE.OctahedronGeometry(ISS_SIZE_KM * globe.getGlobeRadius() / EARTH_RADIUS_KM / 2, 0);
 const issMaterial = new THREE.MeshLambertMaterial({ color: 'black', transparent: false, opacity: 1 });
-globe.objectThreeObject((p) => {
-    console.log("three obj: ", p);
+
+// Add Satellite mesh:
+const satelliteGeometry = new THREE.OctahedronGeometry(SATELLITE_SIZE_KM * globe.getGlobeRadius() / EARTH_RADIUS_KM / 2, 0);
+const satelliteMaterial = new THREE.MeshLambertMaterial({ color: 'grey', transparent: false, opacity: 1 });
+// (Satellites use a single InstancedMesh for performance):
+const satelliteMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, 30000);
+satelliteMesh.frustumCulled = false; // meshes disappear at certain camera rotations/distances with frustrum culling.
+scene.add(satelliteMesh);
+
+// Add object meshes:
 globe.objectThreeObject((obj) => {
-    console.log('three obj: ', obj);
-    return new THREE.Mesh(issGeometry, issMaterial);
+    switch (obj.typeId){
+        case ISS_TYPE_ID:
+            return new THREE.Mesh(issGeometry, issMaterial);
+    }
 });
 
 // Set altitude accessors, as these aren't set automatically:
-globe.objectAltitude(obj => {
+globe
+.objectAltitude(obj => {
     return obj.alt;
 })
 .pathPointAlt(pnt => {
@@ -70,6 +86,44 @@ let issFuturePath = [];
 let issPastPath = [];
 let threeGlobeObjs = [];
 
+let satelliteObjs = [];
+
+var tempMatrixHelperObj = new THREE.Object3D();
+
+axios.get('https://celestrak.org/pub/TLE/catalog.txt')
+.then((res) => {
+    const satelliteTles = res.data;
+    const satelliteTleLines = satelliteTles.split(/\n/);
+
+    const time = new Date();
+    const gmst = satellite.gstime(time);
+
+    let i = 0;
+    while (i < satelliteTleLines.length){
+        const satelliteName = satelliteTleLines[i++];
+        const satelliteTleLine1 = satelliteTleLines[i++]
+        const satelliteTleLine2 = satelliteTleLines[i++]
+        if (!satelliteTleLine1 || !satelliteTleLine2){
+            continue;
+        }
+        const satelliteSatrec = satellite.twoline2satrec(satelliteTleLine1, satelliteTleLine2);
+
+        // Skip bad satellite data:
+        try {
+            getLatLngAlt(time, gmst, satelliteSatrec);
+        }
+        catch (err){
+            continue;
+        }
+
+        const satelliteObj = {
+            id: nextId++,
+            satrec: satelliteSatrec
+        };
+        satelliteObjs.push(satelliteObj);
+    }
+});
+
 axios.get('https://live.ariss.org/iss.txt')
 .then((res) => {
     const issTle = res.data;
@@ -81,6 +135,7 @@ axios.get('https://live.ariss.org/iss.txt')
 
     const issObj = {
         typeId: ISS_TYPE_ID,
+        id: nextId++,
         satrec: issSatrec
     }
 
@@ -98,8 +153,23 @@ function updateThreeGlobeObjs(){
         obj.lng = latLngAlt.lng;
         obj.alt = latLngAlt.alt;
     }
-
     globe.objectsData(threeGlobeObjs);
+}
+
+function updateSatelliteObjs(){
+    const time = new Date();
+    const gmst = satellite.gstime(time);
+    
+    for (let i = 0; i < satelliteObjs.length; i++){
+        const obj = satelliteObjs[i];
+        const latLngAlt = getLatLngAlt(time, gmst, obj.satrec);
+        const coords = globe.getCoords(latLngAlt.lat, latLngAlt.lng, latLngAlt.alt);
+        tempMatrixHelperObj.position.set(coords.x, coords.y, coords.z);
+        tempMatrixHelperObj.updateMatrix();
+        satelliteMesh.setMatrixAt(i, tempMatrixHelperObj.matrix)
+    }
+
+    satelliteMesh.instanceMatrix.needsUpdate = true;
 }
 
 function updateIssPath(){
@@ -137,14 +207,24 @@ function getLatLngAlt(time, gmst, satrec){
     } 
 }
 
+let lastSatelliteUpdateTime = new Date();
 
 // Start update/render loop:
 (function update() {
     controls.update();
     renderer.render(scene, camera);
+    camera.updateProjectionMatrix();
 
     updateThreeGlobeObjs();
     updateIssPath();
 
+    // only update satellites every second (to improve performance):
+    const currentTime = new Date();
+    if (currentTime.getTime() - lastSatelliteUpdateTime.getTime() >= 1000){
+        updateSatelliteObjs();
+        lastSatelliteUpdateTime = currentTime;
+    }
+
+    console.log(threeGlobeObjs.length)
     requestAnimationFrame(update);
 })();

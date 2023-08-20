@@ -1,5 +1,6 @@
 // import { TrackballControls } from 'https://unpkg.com/three/examples/jsm/controls/TrackballControls.js';
 import { OrbitControls } from 'https://unpkg.com/three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'https://unpkg.com/three/examples/jsm/loaders/GLTFLoader.js';
 Object.assign(THREE, { OrbitControls });
 
 
@@ -16,7 +17,9 @@ const globe = new ThreeGlobe()
 
 const ISS_PAST_PATH_ID = 'ISS_PAST_PATH';
 const ISS_FUTURE_PATH_ID = 'ISS_FUTURE_PATH';
-const ISS_TYPE_ID = 'ISS';
+
+const ISS_MARKER_TYPE_ID = 'ISS_MARKER';
+const ISS_MODEL_TYPE_ID = 'ISS_MODEL';
 
 // Set ISS path colors:
 globe
@@ -51,8 +54,32 @@ camera.updateProjectionMatrix();
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
 // Add ISS mesh:
-const issGeometry = new THREE.OctahedronGeometry(ISS_SIZE_KM * globe.getGlobeRadius() / EARTH_RADIUS_KM / 2, 0);
-const issMaterial = new THREE.MeshLambertMaterial({ color: 'black', transparent: false, opacity: 1 });
+const issMarkerGeometry = new THREE.OctahedronGeometry(2 * ISS_SIZE_KM * globe.getGlobeRadius() / EARTH_RADIUS_KM / 2, 0);
+const issMarkerMaterial = new THREE.MeshLambertMaterial({ color: 'black', transparent: true, opacity: 0.5 });
+
+let issModel;
+var loader = new GLTFLoader();
+loader.load('./resources/ISS_stationary.glb', (gltf) => {
+    issModel = gltf.scene;
+
+    const box = new THREE.Box3().setFromObject(issModel); 
+    const size = box.getSize(new THREE.Vector3());
+    console.log('iss', issModel, size);
+
+    const originalModelLength = size.x;
+    const issScale = (originalModelLength / globe.getGlobeRadius()) * (ISS_SIZE_KM / EARTH_RADIUS_KM);
+    issModel.scale.set(issScale, issScale, issScale);
+
+    // Add object meshes:
+    globe.objectThreeObject((obj) => {
+        switch (obj.typeId){
+            case ISS_MARKER_TYPE_ID:
+                return new THREE.Mesh(issMarkerGeometry, issMarkerMaterial);
+            case ISS_MODEL_TYPE_ID:
+                return issModel;
+        }
+    });
+});
 
 // Add Satellite mesh:
 const satelliteGeometry = new THREE.OctahedronGeometry(SATELLITE_SIZE_KM * globe.getGlobeRadius() / EARTH_RADIUS_KM / 2, 0);
@@ -61,14 +88,6 @@ const satelliteMaterial = new THREE.MeshLambertMaterial({ color: 'grey', transpa
 const satelliteMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, 30000);
 satelliteMesh.frustumCulled = false; // meshes disappear at certain camera rotations/distances with frustrum culling.
 scene.add(satelliteMesh);
-
-// Add object meshes:
-globe.objectThreeObject((obj) => {
-    switch (obj.typeId){
-        case ISS_TYPE_ID:
-            return new THREE.Mesh(issGeometry, issMaterial);
-    }
-});
 
 // Set altitude accessors, as these aren't set automatically:
 globe
@@ -103,6 +122,12 @@ axios.get('https://celestrak.org/pub/TLE/catalog.txt')
         const satelliteName = satelliteTleLines[i++];
         const satelliteTleLine1 = satelliteTleLines[i++]
         const satelliteTleLine2 = satelliteTleLines[i++]
+
+        // Exclude the ISS from satellites since we show it separately:
+        if (satelliteName.includes('ISS (ZARYA)')){
+            continue;
+        }
+
         if (!satelliteTleLine1 || !satelliteTleLine2){
             continue;
         }
@@ -133,13 +158,19 @@ axios.get('https://live.ariss.org/iss.txt')
 
     issSatrec = satellite.twoline2satrec(tleLine1, tleLine2);
 
-    const issObj = {
-        typeId: ISS_TYPE_ID,
+    // Add ISS marker:
+    threeGlobeObjs.push({
+        typeId: ISS_MARKER_TYPE_ID,
         id: nextId++,
         satrec: issSatrec
-    }
+    });
 
-    threeGlobeObjs.push(issObj);
+    // Add ISS model:
+    threeGlobeObjs.push({
+        typeId: ISS_MODEL_TYPE_ID,
+        id: nextId++,
+        satrec: issSatrec
+    });
 });
 
 

@@ -6,7 +6,7 @@ const SATELLITE_SIZE_KM = 50;
 class SatellitesController{
     #satelliteInstancedMesh;
     #lastSatelliteUpdateTime = new Date();
-    #tempMatrixHelperObj = new THREE.Object3D();
+    #tempMatrix = new THREE.Matrix4();
     #satellitesData = [];
 
     #state;
@@ -55,10 +55,11 @@ class SatellitesController{
                 continue;
             }
 
-            const satelliteObj = {
+            const satelliteData = {
+                name: satelliteName,
                 satrec: satelliteSatrec
             };
-            this.#satellitesData.push(satelliteObj);
+            this.#satellitesData.push(satelliteData);
         }
 
         console.log(`Skipped ${skippedCount} out of ${totalCount} satellites.`);
@@ -74,15 +75,17 @@ class SatellitesController{
     }
 
     updateSatellites(){
-        // only update satellites every second (to improve performance):
+        // Only update satellites every second (to improve performance):
         const currentTime = new Date();
         if (currentTime.getTime() - this.#lastSatelliteUpdateTime.getTime() >= 1000){
-            this.#updateSatelliteObjs();
+            this.#updatePositions();
             this.#lastSatelliteUpdateTime = currentTime;
         }
+
+        this.#updateRaycasting();
     }
 
-    #updateSatelliteObjs(){
+    #updatePositions(){
         const time = new Date();
         const gmst = satellite.gstime(time);
         
@@ -90,12 +93,25 @@ class SatellitesController{
             const obj = this.#satellitesData[i];
             const latLngAlt = helper.getLatLngAlt(time, gmst, obj.satrec);
             const coords = this.#state.getCoords(latLngAlt.lat, latLngAlt.lng, latLngAlt.alt);
-            this.#tempMatrixHelperObj.position.set(coords.x, coords.y, coords.z);
-            this.#tempMatrixHelperObj.updateMatrix();
-            this.#satelliteInstancedMesh.setMatrixAt(i, this.#tempMatrixHelperObj.matrix)
+            this.#tempMatrix.setPosition(coords.x, coords.y, coords.z);
+            this.#satelliteInstancedMesh.setMatrixAt(i, this.#tempMatrix)
         }
 
-        this.#satelliteInstancedMesh.instanceMatrix.needsUpdate = true;
+        this.#satelliteInstancedMesh.instanceMatrix.needsUpdate = true; // Signals actual matrix update.
+        this.#satelliteInstancedMesh.computeBoundingSphere(); // Updates bounding spheres so that raycast works.
+    }
+
+    #updateRaycasting(){
+        const satelliteIntersections = this.#state.raycastIntersectObject(this.#satelliteInstancedMesh);
+
+        if (satelliteIntersections.length > 0){
+            const hoveringSatellite = satelliteIntersections[0];
+            const satelliteId = hoveringSatellite.instanceId;
+            const satelliteData = this.#satellitesData[satelliteId];
+            if (satelliteData){
+                console.log('hovering satellite: ' + satelliteData.name, hoveringSatellite);
+            }
+        }
     }
 }
 

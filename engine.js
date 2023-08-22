@@ -6,6 +6,8 @@ class EngineScene{
     scene;
     camera;
     controls;
+    pointer = new THREE.Vector2();
+    raycaster = new THREE.Raycaster();
 
     #updateCallback;
 
@@ -15,6 +17,7 @@ class EngineScene{
         this.#initScene();
         this.#initCamera();
         this.#initControls();
+        this.#initRaycasting();
     }
 
     #initGlobe(){
@@ -62,6 +65,15 @@ class EngineScene{
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
     }
 
+    #initRaycasting(){
+        window.addEventListener('mousemove', this.#updateRaycastPointer.bind(this));
+    }
+
+    /** CODE TAKEN DIRECTLY from https://www.youtube.com/watch?v=CbUhot3K-gc */
+    #updateRaycastPointer(mouseEvent) {
+        this.pointer.x = (mouseEvent.clientX / window.innerWidth) * 2 - 1;
+        this.pointer.y = -(mouseEvent.clientY / window.innerHeight) * 2 + 1;
+    }
 
     onLoad(callback){
         this.globe.onGlobeReady(callback);
@@ -75,11 +87,12 @@ class EngineScene{
 
     #updateLoop() {
         this.controls.update();
-        this.renderer.render(this.scene, this.camera);
         this.camera.updateProjectionMatrix();
+        this.raycaster.setFromCamera(this.pointer, this.camera);
 
         this.#updateCallback();
 
+        this.renderer.render(this.scene, this.camera);
         requestAnimationFrame(this.#updateLoop.bind(this));
     };
 }

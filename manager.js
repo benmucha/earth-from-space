@@ -14,7 +14,7 @@ const engine = new EngineScene();
 const eventHandler = new EventHandler(engine);
 const state = new SharedState(engine);
 const satellitesController = new SatellitesController(state, eventHandler);
-const issController = new IssController(state);
+const issController = new IssController(state, eventHandler);
 
 let threeGlobeObjs;
 
@@ -69,6 +69,7 @@ function integrateRawThreeJsObjectVisuals(satellitesInstancedMesh){
 function update(){
     updatePaths();
     updateThreeGlobeObjs();
+    issController.updateIss();
     satellitesController.updateSatellites();
     eventHandler.updateHoverTarget();
     console.log(threeGlobeObjs.length)

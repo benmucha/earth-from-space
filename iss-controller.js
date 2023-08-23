@@ -10,16 +10,28 @@ const ISS_MODEL_TYPE_ID = 'ISS_MODEL';
 
 const ISS_SIZE_KM = 100;
 
+const markerNormalOpacity = 0.5;
+const markerHoveredOpacity = 0.3;
+const markerFocusedOpacity = 0.0;
+
 class IssController{
     #issMarkerMesh;
     #issModelMesh;
 
+    #$issInfoWrapper;
+
     #issSatrec;
 
     #state;
+    #eventHandler;
 
-    constructor(state){
+    #hasLoadedIssText;
+    #isHovered;
+    #isFocused;
+
+    constructor(state, eventHandler){
         this.#state = state;
+        this.#eventHandler = eventHandler;
     }
 
     getIssPathColors(pathId){
@@ -56,6 +68,8 @@ class IssController{
         await this.#initIssData();
         this.#initIssMarkerMesh();
         this.#issModelMesh = await this.#loadIssModel();
+
+        this.#$issInfoWrapper = $('#iss-info-wrapper');
     }
 
     async #loadIssModel(){
@@ -79,8 +93,10 @@ class IssController{
 
     #initIssMarkerMesh(){
         const issMarkerGeometry = new THREE.OctahedronGeometry(2 * ISS_SIZE_KM * this.#state.getGlobeRadius() / helper.EARTH_RADIUS_KM / 2, 0);
-        const issMarkerMaterial = new THREE.MeshLambertMaterial({ color: 'black', transparent: true, opacity: 0.5 });
+        const issMarkerMaterial = new THREE.MeshLambertMaterial({ color: 'black', transparent: true, opacity: markerNormalOpacity });
         this.#issMarkerMesh = new THREE.Mesh(issMarkerGeometry, issMarkerMaterial);
+
+        this.#eventHandler.subscribeRaycastTargets(this.#onHover.bind(this), this.#onUnhover.bind(this), this.#onFocus.bind(this), this.#onUnfocus.bind(this), this.#issMarkerMesh);
     }
 
     async #initIssData(){
@@ -103,6 +119,84 @@ class IssController{
             satrec: this.#issSatrec
         };
         return [issMarkerObjData, issModelObjData];
+    }
+
+
+
+    updateIss(){
+        // The position is currently updated through ThreeGlobe.
+        this.#updateFocusedVisuals();
+    }
+
+    #onHover(_){
+        this.#isHovered = true;
+        this.#updateMarkerStateVisual();
+    }
+
+    #onUnhover(_){
+        this.#isHovered = false;
+        this.#updateMarkerStateVisual();
+    }
+
+    #onFocus(_){
+        this.#isFocused = true;
+        this.#updateMarkerStateVisual();
+        this.#updateFocusedVisuals();
+        this.#$issInfoWrapper.show();
+
+        if (this.hasLoadedIssText == null){
+            this.#setIssInfoText();
+        }
+    }
+
+    async #setIssInfoText(){
+        const issInfoText = await fetch('http://api.open-notify.org/astros.json')
+        .then(res => res.json())
+        .then(peopleInSpaceResponse => {
+            let peopleText = '';
+            let count = 0;
+            for (const person of peopleInSpaceResponse['people']){
+                if (person.craft == 'ISS'){
+                    count++;
+                    peopleText += person.name + '<br>';
+                }
+            }
+            return '<h6 class="card-subtitle mb-1 text-muted">' + count + ' people on-board:</h6>' + peopleText;
+        });
+
+        $('#iss-text').html(issInfoText);
+        this.hasLoadedIssText = true;
+    }
+
+    #onUnfocus(_){
+        this.#isFocused = false;
+        this.#updateMarkerStateVisual();
+        this.#$issInfoWrapper.hide();
+    }
+
+    #updateMarkerStateVisual(){
+        let markerOpacity;
+        if (this.#isFocused){
+            markerOpacity = markerFocusedOpacity;
+        }
+        else if (this.#isHovered){
+            markerOpacity = markerHoveredOpacity;
+        }
+        else{
+            markerOpacity = markerNormalOpacity;
+        }
+        this.#issMarkerMesh.material.opacity = markerOpacity;
+    }
+    
+    #updateFocusedVisuals(){
+        if (this.#isFocused){
+            const time = new Date();
+            const gmst = satellite.gstime(time);
+            const latLngAlt = helper.getLatLngAlt(time, gmst, this.#issSatrec);
+            this.#$issInfoWrapper.find('.lat').text(parseFloat(latLngAlt.lat).toFixed(2));
+            this.#$issInfoWrapper.find('.lon').text(parseFloat(latLngAlt.lng).toFixed(2));
+            this.#$issInfoWrapper.find('.alt').text((parseFloat(latLngAlt.alt)).toFixed(2) + ' km');
+        }
     }
 }
 

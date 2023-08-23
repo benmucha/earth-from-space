@@ -80,7 +80,8 @@ class SatellitesController{
     }
 
     makeSatellitesInstancedMesh(){
-        const satelliteGeometry = new THREE.OctahedronGeometry(SATELLITE_SIZE_KM * this.#state.getGlobeRadius() / helper.EARTH_RADIUS_KM / 2, 0);
+        const geometryRadius = SATELLITE_SIZE_KM * this.#state.getGlobeRadius() / helper.EARTH_RADIUS_KM / 2;
+        const satelliteGeometry =  new THREE.IcosahedronGeometry(geometryRadius, 1);
         const satelliteMaterial = new THREE.MeshLambertMaterial({ color: 'grey', transparent: false, opacity: 1 });
         // (Satellites use a single InstancedMesh for performance):
         this.#satelliteInstancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, 30000);

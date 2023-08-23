@@ -14,7 +14,8 @@ class SatellitesController{
 
     #$satelliteInfoWrapper;
 
-    #hoveredSatelliteData;
+    #hoveredSatelliteId;
+    #focusedSatelliteId;
     #focusedSatelliteData;
 
     #state;
@@ -90,7 +91,7 @@ class SatellitesController{
         }
         this.#satelliteInstancedMesh.instanceColor.needsUpdate = true;
 
-        this.#eventHandler.subscribeRaycastTargets(this.#onSatelliteHover.bind(this), this.#onSatelliteUnhover.bind(this), this.#satelliteInstancedMesh);
+        this.#eventHandler.subscribeRaycastTargets(this.#onSatelliteHover.bind(this), this.#onSatelliteUnhover.bind(this), this.#onSatelliteFocus.bind(this), this.#onSatelliteUnfocus.bind(this), this.#satelliteInstancedMesh);
 
         return this.#satelliteInstancedMesh;
     }
@@ -103,19 +104,19 @@ class SatellitesController{
             this.#lastSatelliteUpdateTime = currentTime;
         }
 
-        this.#updateRaycasting();
+        this.#updateFocusedVisuals();
     }
 
     #updatePositions(){
         const time = new Date();
         const gmst = satellite.gstime(time);
         
-        for (let i = 0; i < this.#satellitesData.length; i++){
-            const obj = this.#satellitesData[i];
-            const latLngAlt = helper.getLatLngAlt(time, gmst, obj.satrec);
+        for (let satelliteId = 0; satelliteId < this.#satellitesData.length; satelliteId++){
+            const obj = this.#satellitesData[satelliteId];
+            const latLngAlt = helper.getRenderingLatLngAlt(time, gmst, obj.satrec);
             const coords = this.#state.getCoords(latLngAlt.lat, latLngAlt.lng, latLngAlt.alt);
             this.#tempMatrix.setPosition(coords.x, coords.y, coords.z);
-            this.#satelliteInstancedMesh.setMatrixAt(i, this.#tempMatrix)
+            this.#satelliteInstancedMesh.setMatrixAt(satelliteId, this.#tempMatrix)
         }
 
         this.#satelliteInstancedMesh.instanceMatrix.needsUpdate = true; // Signals actual matrix update.
@@ -124,15 +125,68 @@ class SatellitesController{
 
     #onSatelliteHover(intersectionInstance){
         const satelliteId = intersectionInstance.instanceId;
-        const satelliteData = this.#satellitesData[satelliteId];
-        console.log('hover satellite: ' + satelliteData.name, satelliteData);
+        this.#hoveredSatelliteId = satelliteId;
+        this.#updateSatelliteColor(satelliteId);
     }
 
-    #onSatelliteUnhover(intersectionInstance){
-        const satelliteId = intersectionInstance.instanceId;
-        const satelliteData = this.#satellitesData[satelliteId];
-        console.log('unhover satellite: ' + satelliteData.name, satelliteData);
+    #onSatelliteUnhover(_){
+        const lastHoveredId = this.#hoveredSatelliteId;
+        this.#hoveredSatelliteId = null;
+        this.#updateSatelliteColor(lastHoveredId);
     }
+
+    #onSatelliteFocus(_){
+        const lastFocusedSatelliteId = this.#focusedSatelliteId;
+
+        const focusedSatelliteId = this.#hoveredSatelliteId;
+        this.#focusedSatelliteId = focusedSatelliteId;
+        this.#focusedSatelliteData = this.#satellitesData[focusedSatelliteId];
+
+        if (lastFocusedSatelliteId != null){
+            this.#updateSatelliteColor(lastFocusedSatelliteId);
+        }
+
+        if (this.#focusedSatelliteId != null){
+            this.#updateSatelliteColor(focusedSatelliteId);
+
+            this.#$satelliteInfoWrapper.find('.name').text(this.#focusedSatelliteData.name);
+            this.#updateFocusedVisuals();
+            this.#$satelliteInfoWrapper.show();
+        }
+    }
+
+    #onSatelliteUnfocus(_){
+        const unfocusedSatelliteId = this.#focusedSatelliteId;
+        this.#focusedSatelliteId = null;
+        this.#focusedSatelliteData = null;
+
+        this.#$satelliteInfoWrapper.hide();
+        this.#updateSatelliteColor(unfocusedSatelliteId);
+    }
+
+    #updateSatelliteColor(satelliteId){
+        let satelliteColor;
+        if (this.#focusedSatelliteId == satelliteId){
+            satelliteColor = focusedColor;
+        }
+        else if (this.#hoveredSatelliteId == satelliteId){
+            satelliteColor = hoveredColor;
+        }
+        else{
+            satelliteColor = normalColor;
+        }
+        this.#satelliteInstancedMesh.setColorAt(satelliteId, satelliteColor);
+        this.#satelliteInstancedMesh.instanceColor.needsUpdate = true;
+    }
+
+    #updateFocusedVisuals(){
+        if (this.#focusedSatelliteData){
+            const time = new Date();
+            const gmst = satellite.gstime(time);
+            const latLngAlt = helper.getLatLngAlt(time, gmst, this.#focusedSatelliteData.satrec);
+            this.#$satelliteInfoWrapper.find('.lat').text(parseFloat(latLngAlt.lat).toFixed(2));
+            this.#$satelliteInfoWrapper.find('.lon').text(parseFloat(latLngAlt.lng).toFixed(2));
+            this.#$satelliteInfoWrapper.find('.alt').text((parseFloat(latLngAlt.alt)).toFixed(2) + ' km');
         }
     }
 }

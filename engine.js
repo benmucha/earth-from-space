@@ -8,12 +8,14 @@ class EngineScene{
     controls;
     pointer = new THREE.Vector2();
     raycaster = new THREE.Raycaster();
+    visualElementParent
 
     #updateCallback;
 
     init(visualElementParent){
+        this.visualElementParent = visualElementParent;
         this.#initGlobe();
-        this.#initRenderer(visualElementParent);
+        this.#initRenderer();
         this.#initScene();
         this.#initCamera();
         this.#initControls();
@@ -40,10 +42,10 @@ class EngineScene{
         .pathTransitionDuration(0); // transition duration needs to be 0 in order to show when paths are set every frame.
     }
 
-    #initRenderer(visualElementParent){
+    #initRenderer(){
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        visualElementParent.appendChild(this.renderer.domElement);
+        this.visualElementParent.appendChild(this.renderer.domElement);
     }
 
     #initScene(){

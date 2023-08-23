@@ -22,6 +22,7 @@ let threeGlobeObjs;
 function onPageLoad(){
     engine.init(document.getElementById('rendererContainer'));
     engine.onLoad(start);
+    eventHandler.init();
 }
 
 window.addEventListener('load', onPageLoad);
@@ -83,7 +84,7 @@ function updateThreeGlobeObjs(){
     const gmst = satellite.gstime(time);
 
     for (const obj of threeGlobeObjs){
-        const latLngAlt = helper.getLatLngAlt(time, gmst, obj.satrec);
+        const latLngAlt = helper.getRenderingLatLngAlt(time, gmst, obj.satrec);
         obj.lat = latLngAlt.lat;
         obj.lng = latLngAlt.lng;
         obj.alt = latLngAlt.alt;

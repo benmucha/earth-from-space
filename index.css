@@ -13,3 +13,15 @@ html, body {
   height: 100%;
   background-color: black;
 }
+
+.info-wrapper {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: none; /* hide on start */
+}
+
+.label {
+  font-weight: bold;
+  margin-right: 5px;
+}

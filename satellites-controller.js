@@ -2,6 +2,9 @@
 import * as helper from './helper.js'
 
 const SATELLITE_SIZE_KM = 50;
+const normalColor = new THREE.Color().setHex(0xffffff);
+const hoveredColor = new THREE.Color().setHex(0xaaaaff);
+const focusedColor = new THREE.Color().setHex(0x0000ff);
 
 class SatellitesController{
     #satelliteInstancedMesh;
@@ -9,14 +12,23 @@ class SatellitesController{
     #tempMatrix = new THREE.Matrix4();
     #satellitesData = [];
 
-    #state;
+    #$satelliteInfoWrapper;
 
-    constructor(state){
+    #hoveredSatelliteData;
+    #focusedSatelliteData;
+
+    #state;
+    #eventHandler;
+
+    constructor(state, eventHandler){
         this.#state = state;
+        this.#eventHandler = eventHandler;
     }
 
     async initSatellites(){
         await this.#initSatellitesData();
+
+        this.#$satelliteInfoWrapper = $('#satellite-info-wrapper');
     }
 
     async #initSatellitesData(){
@@ -56,6 +68,7 @@ class SatellitesController{
             }
 
             const satelliteData = {
+                id: this.#satellitesData.length,
                 name: satelliteName,
                 satrec: satelliteSatrec
             };
@@ -71,6 +84,14 @@ class SatellitesController{
         // (Satellites use a single InstancedMesh for performance):
         this.#satelliteInstancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, 30000);
         this.#satelliteInstancedMesh.frustumCulled = false; // meshes disappear at certain camera rotations/distances with frustrum culling.
+
+        for (let satelliteId = 0; satelliteId < this.#satellitesData.length; satelliteId++){
+            this.#satelliteInstancedMesh.setColorAt(satelliteId, normalColor);
+        }
+        this.#satelliteInstancedMesh.instanceColor.needsUpdate = true;
+
+        this.#eventHandler.subscribeRaycastTargets(this.#onSatelliteHover.bind(this), this.#onSatelliteUnhover.bind(this), this.#satelliteInstancedMesh);
+
         return this.#satelliteInstancedMesh;
     }
 
@@ -101,16 +122,17 @@ class SatellitesController{
         this.#satelliteInstancedMesh.computeBoundingSphere(); // Updates bounding spheres so that raycast works.
     }
 
-    #updateRaycasting(){
-        const satelliteIntersections = this.#state.raycastIntersectObject(this.#satelliteInstancedMesh);
+    #onSatelliteHover(intersectionInstance){
+        const satelliteId = intersectionInstance.instanceId;
+        const satelliteData = this.#satellitesData[satelliteId];
+        console.log('hover satellite: ' + satelliteData.name, satelliteData);
+    }
 
-        if (satelliteIntersections.length > 0){
-            const hoveringSatellite = satelliteIntersections[0];
-            const satelliteId = hoveringSatellite.instanceId;
-            const satelliteData = this.#satellitesData[satelliteId];
-            if (satelliteData){
-                console.log('hovering satellite: ' + satelliteData.name, hoveringSatellite);
-            }
+    #onSatelliteUnhover(intersectionInstance){
+        const satelliteId = intersectionInstance.instanceId;
+        const satelliteData = this.#satellitesData[satelliteId];
+        console.log('unhover satellite: ' + satelliteData.name, satelliteData);
+    }
         }
     }
 }

@@ -2,6 +2,7 @@
 import { OrbitControls } from 'https://unpkg.com/three/examples/jsm/controls/OrbitControls.js';
 import * as helper from './helper.js';
 import EngineScene from './engine.js';
+import EventHandler from './event-handler.js';
 import SharedState from './shared-state.js';
 import SatellitesController from './satellites-controller.js';
 import IssController from './iss-controller.js';
@@ -10,8 +11,9 @@ Object.assign(THREE, { OrbitControls });
 
 
 const engine = new EngineScene();
+const eventHandler = new EventHandler(engine);
 const state = new SharedState(engine);
-const satellitesController = new SatellitesController(state);
+const satellitesController = new SatellitesController(state, eventHandler);
 const issController = new IssController(state);
 
 let threeGlobeObjs;
@@ -67,6 +69,7 @@ function update(){
     updatePaths();
     updateThreeGlobeObjs();
     satellitesController.updateSatellites();
+    eventHandler.updateHoverTarget();
     console.log(threeGlobeObjs.length)
 }
 

@@ -13,10 +13,6 @@ class SharedState{
     getCoords(lat, lng, alt){
         return this.#engine.globe.getCoords(lat, lng, alt);
     }
-
-    raycastIntersectObject(obj){
-        return this.#engine.raycaster.intersectObject(obj);
-    }
 }
 
 export { SharedState as default };

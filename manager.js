@@ -37,14 +37,14 @@ async function init(){
     eventHandler.subscribeRaycastTargets(null, null, null, null, engine.globe);
 
     await issController.initIss();
-    const issThreeGlobeObjs = issController.getIssObjectsData();
+    const issThreeGlobeObj = issController.getIssObjectData();
 
     // Purposefully fire-and-forget so that the page is not stalled by the satellites loading.
     // TODO refactor flow.
     satellitesController.initSatellites();
 
     // TODO refactor - scary coupling.
-    threeGlobeObjs = issThreeGlobeObjs;
+    threeGlobeObjs = [issThreeGlobeObj];
     integratePathVisuals();
     integrateThreeGlobeObjectVisuals();
 }
@@ -76,6 +76,7 @@ function updatePaths(){
     engine.globe.pathsData(issPaths);
 }
 
+// TODO refactor remove, this only updates ISS.
 function updateThreeGlobeObjs(){
     const time = new Date();
     const gmst = satellite.gstime(time);

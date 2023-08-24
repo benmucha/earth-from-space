@@ -45,13 +45,8 @@ class IssController{
         }
     }
 
-    getIssThreeObject(objTypeId){
-        switch (objTypeId){
-            case ISS_MARKER_TYPE_ID:
-                return this.#issMarkerMesh;
-            case ISS_MODEL_TYPE_ID:
-                return this.#issModelMesh;
-        }
+    getIssThreeObject(){
+        return this.#issMarkerMesh;
     }
 
     getIssPaths(){
@@ -69,13 +64,13 @@ class IssController{
     async initIss(){
         await this.#initIssData();
         this.#initIssMarkerMesh();
-        this.#issModelMesh = await this.#loadIssModel();
+        this.#loadIssModel();
 
         this.#$issInfoWrapper = $('#iss-info-wrapper');
     }
 
     async #loadIssModel(){
-        return await new Promise(resolve => {
+        this.#issModelMesh = await new Promise(resolve => {
             var loader = new GLTFLoader();
             loader.load('./resources/ISS_stationary.glb', (gltf) => {
                 const issModel = gltf.scene;
@@ -91,6 +86,8 @@ class IssController{
                 resolve(issModel);
             });
         });
+
+        this.#issMarkerMesh.add(this.#issModelMesh);
     }
 
     #initIssMarkerMesh(){
@@ -111,16 +108,10 @@ class IssController{
         this.#issSatrec = satellite.twoline2satrec(tleLine1, tleLine2);
     }
 
-    getIssObjectsData(){
-        const issMarkerObjData = {
-            typeId: ISS_MARKER_TYPE_ID,
+    getIssObjectData(){
+        return {
             satrec: this.#issSatrec
         };
-        const issModelObjData = {
-            typeId: ISS_MODEL_TYPE_ID,
-            satrec: this.#issSatrec
-        };
-        return [issMarkerObjData, issModelObjData];
     }
 
 

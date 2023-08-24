@@ -34,6 +34,9 @@ async function start(){
 }
 
 async function init(){
+    // Subscribe the globe as a raycast target just so that it blocks raycasts from going through the globe:
+    eventHandler.subscribeRaycastTargets(null, null, null, null, engine.globe);
+
     await issController.initIss();
     const issThreeGlobeObjs = issController.getIssObjectsData();
 

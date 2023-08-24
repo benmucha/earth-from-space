@@ -49,11 +49,18 @@ class EventHandler{
 
             // If the target is close enough then hover it:
             if (hoverTarget.distance < 300){
-                let hoverTargetId = hoverTarget.object.userData.targetId.toString();
-                if (hoverTarget.instanceId){
-                    hoverTargetId += '-' + hoverTarget.instanceId;
+                
+                if (hoverTarget.object.userData.targetId){
+                    let hoverTargetId = hoverTarget.object.userData.targetId.toString();
+                    if (hoverTarget.instanceId){
+                        hoverTargetId += '-' + hoverTarget.instanceId;
+                    }
+                    this.#setHoverTarget(hoverTargetId, hoverTarget);
                 }
-                this.#setHoverTarget(hoverTargetId, hoverTarget);
+                else{
+                    // If there is no specified user data on this target object, then this is not a real target (and it's just meant to block interactions):
+                    this.#setHoverTarget(null, null);
+                }
             }
         }
         else{

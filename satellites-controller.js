@@ -1,5 +1,7 @@
 
+import * as THREE from 'three';
 import * as helper from './helper.js'
+import * as satellite from 'satellite.js';
 
 const SATELLITE_SIZE_KM = 50;
 const normalColor = new THREE.Color().setHex(0xffffff);

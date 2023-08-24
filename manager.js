@@ -1,11 +1,15 @@
 
-import { OrbitControls } from 'https://unpkg.com/three/examples/jsm/controls/OrbitControls.js';
+import './index.css';
+
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as helper from './helper.js';
 import EngineScene from './engine.js';
 import EventHandler from './event-handler.js';
 import SharedState from './shared-state.js';
 import SatellitesController from './satellites-controller.js';
 import IssController from './iss-controller.js';
+import * as satellite from 'satellite.js'; 
 
 Object.assign(THREE, { OrbitControls });
 

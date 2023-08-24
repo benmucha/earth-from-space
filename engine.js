@@ -1,4 +1,7 @@
 
+import * as THREE from 'three';
+import ThreeGlobe from 'three-globe';
+
 /** The foundation which powers the game instance/scene. Implemented with Three.js. */
 class EngineScene{
     globe;
@@ -114,7 +117,7 @@ class EngineScene{
         // If the camera is inside the earth, then reposition to be on the surface:
         if (distance < minDistance){
             // Calculate the vector to "push back" the camera by:
-            const pushBackDirection = new THREE.Vector3().subVectors(newCameraPos, earthCenterPos).normalize();
+            const pushBackDirection = new THREE.Vector3().subVectors(newCameraPos, this.earthCenterPos).normalize();
             const distanceToPushBack = minDistance - distance;
             const pushBackDelta = pushBackDirection.multiplyScalar(distanceToPushBack);
 

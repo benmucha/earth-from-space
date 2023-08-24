@@ -1,6 +1,8 @@
 
+import * as THREE from 'three';
 import * as helper from './helper.js'
-import { GLTFLoader } from 'https://unpkg.com/three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import * as satellite from 'satellite.js';
 
 const ISS_PAST_PATH_ID = 'ISS_PAST_PATH';
 const ISS_FUTURE_PATH_ID = 'ISS_FUTURE_PATH';

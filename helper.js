@@ -1,4 +1,6 @@
 
+import * as satellite from 'satellite.js';
+
 function makeOrbitPath(satrec, startMinutes, endMinutes){
     const currentTime = new Date();
     const path = [];

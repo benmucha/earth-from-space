@@ -152,21 +152,7 @@ class IssController{
     }
 
     async #setIssInfoText(){
-        const issInfoText = await fetch('http://api.open-notify.org/astros.json')
-        .then(res => res.json())
-        .then(peopleInSpaceResponse => {
-            let peopleText = '';
-            let count = 0;
-            for (const person of peopleInSpaceResponse['people']){
-                if (person.craft == 'ISS'){
-                    count++;
-                    peopleText += person.name + '<br>';
-                }
-            }
-            return '<h6 class="card-subtitle mb-1 text-muted">' + count + ' people on-board:</h6>' + peopleText;
-        });
-
-        $('#iss-text').html(issInfoText);
+        // TODO
         this.hasLoadedIssText = true;
     }
 

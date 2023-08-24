@@ -195,9 +195,9 @@ class IssController{
             const time = new Date();
             const gmst = satellite.gstime(time);
             const latLngAlt = helper.getLatLngAlt(time, gmst, this.#issSatrec);
-            this.#$issInfoWrapper.find('.lat').text(parseFloat(latLngAlt.lat).toFixed(2));
-            this.#$issInfoWrapper.find('.lon').text(parseFloat(latLngAlt.lng).toFixed(2));
-            this.#$issInfoWrapper.find('.alt').text((parseFloat(latLngAlt.alt)).toFixed(2) + ' km');
+            this.#$issInfoWrapper.find('.lat').text(latLngAlt.lat.toFixed(2));
+            this.#$issInfoWrapper.find('.lon').text(latLngAlt.lng.toFixed(2));
+            this.#$issInfoWrapper.find('.alt').text(latLngAlt.alt.toFixed(2) + ' km');
             const speed = helper.eciVelocityToSpeed(latLngAlt.eci.velocity);
             this.#$issInfoWrapper.find('.speed').text(speed.toFixed(2) + ' km/hr');
         }

@@ -187,9 +187,9 @@ class SatellitesController{
             const time = new Date();
             const gmst = satellite.gstime(time);
             const latLngAlt = helper.getLatLngAlt(time, gmst, this.#focusedSatelliteData.satrec);
-            this.#$satelliteInfoWrapper.find('.lat').text(parseFloat(latLngAlt.lat).toFixed(2));
-            this.#$satelliteInfoWrapper.find('.lon').text(parseFloat(latLngAlt.lng).toFixed(2));
-            this.#$satelliteInfoWrapper.find('.alt').text((parseFloat(latLngAlt.alt)).toFixed(2) + ' km');
+            this.#$satelliteInfoWrapper.find('.lat').text(latLngAlt.lat.toFixed(2));
+            this.#$satelliteInfoWrapper.find('.lon').text(latLngAlt.lng.toFixed(2));
+            this.#$satelliteInfoWrapper.find('.alt').text(latLngAlt.alt.toFixed(2) + ' km');
             const speed = helper.eciVelocityToSpeed(latLngAlt.eci.velocity);
             this.#$satelliteInfoWrapper.find('.speed').text(speed.toFixed(2) + ' km/hr');
         }

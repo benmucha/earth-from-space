@@ -79,7 +79,6 @@ function update(){
     issController.updateIss();
     satellitesController.updateSatellites();
     eventHandler.updateHoverTarget();
-    console.log(threeGlobeObjs.length)
 }
 
 function updatePaths(){

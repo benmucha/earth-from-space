@@ -9,6 +9,7 @@ class EngineScene{
     pointer = new THREE.Vector2();
     raycaster = new THREE.Raycaster();
     visualElementParent
+    earthCenterPos = new THREE.Vector3().set(0,0,0);
 
     #updateCallback;
 
@@ -90,6 +91,8 @@ class EngineScene{
     #updateLoop() {
         this.controls.update();
         this.camera.updateProjectionMatrix();
+        this.#correctCameraPos();
+
         this.raycaster.setFromCamera(this.pointer, this.camera);
 
         this.#updateCallback();
@@ -97,6 +100,30 @@ class EngineScene{
         this.renderer.render(this.scene, this.camera);
         requestAnimationFrame(this.#updateLoop.bind(this));
     };
+
+    /** Repositions the camera if needed to keep it from going inside the Earth */
+    #correctCameraPos(){
+        // Calculate the camera's distance from the Earth's center:
+        const newCameraPos = this.camera.position;
+        const distance = newCameraPos.distanceTo(this.earthCenterPos);
+
+        // Calculate the minimum distance that the camera should be from the Earth's center:
+        const cameraDistanceFromSurfaceMargin = 0.5;
+        const minDistance = this.globe.getGlobeRadius() + cameraDistanceFromSurfaceMargin;
+
+        // If the camera is inside the earth, then reposition to be on the surface:
+        if (distance < minDistance){
+            // Calculate the vector to "push back" the camera by:
+            const pushBackDirection = new THREE.Vector3().subVectors(newCameraPos, earthCenterPos).normalize();
+            const distanceToPushBack = minDistance - distance;
+            const pushBackDelta = pushBackDirection.multiplyScalar(distanceToPushBack);
+
+            // Adjust the camera position by the "push back" vector:
+            const adjustedCameraPos = newCameraPos.add(pushBackDelta);
+            this.camera.position.set(adjustedCameraPos.x, adjustedCameraPos.y, adjustedCameraPos.z);
+            this.camera.updateProjectionMatrix();
+        }
+    }
 }
 
 export { EngineScene as default };

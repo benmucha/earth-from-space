@@ -23,10 +23,20 @@ function getLatLngAlt(time, gmst, satrec){
     return {
         lat: satellite.radiansToDegrees(gdPos.latitude),
         lng: satellite.radiansToDegrees(gdPos.longitude),
-        alt: gdPos.height
+        alt: gdPos.height,
+        eci: eci
     } 
+}
+
+/** Converts ECI velocity to speed in km/hr. */
+function eciVelocityToSpeed(eciVelocity){
+    // TAKEN DIRECTLY FROM https://github.com/shashwatak/satellite-js/pull/65/commits/09fba3bb68d707562e3b4610081062218de69603
+    const speedKmPerS = Math.sqrt(Math.pow(eciVelocity.x, 2) + Math.pow(eciVelocity.y, 2) + Math.pow(eciVelocity.z, 2));
+
+    const speedKmPerHr = speedKmPerS * 3600;
+    return speedKmPerHr;
 }
 
 const EARTH_RADIUS_KM = 6371;
 
-export { EARTH_RADIUS_KM, makeOrbitPath, getRenderingLatLngAlt, getLatLngAlt }
+export { EARTH_RADIUS_KM, makeOrbitPath, getRenderingLatLngAlt, getLatLngAlt, eciVelocityToSpeed }

@@ -1,5 +1,6 @@
 
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import ThreeGlobe from 'three-globe';
 
 /** The foundation which powers the game instance/scene. Implemented with Three.js. */
@@ -68,7 +69,7 @@ class EngineScene{
     }
 
     #initControls(){
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     }
 
     #initRaycasting(){

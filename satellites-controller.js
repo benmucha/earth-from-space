@@ -29,9 +29,9 @@ class SatellitesController{
     }
 
     async initSatellites(){
-        await this.#initSatellitesData();
-
         this.#$satelliteInfoWrapper = $('#satellite-info-wrapper');
+        await this.#initSatellitesData();
+        this.#makeSatellitesInstancedMesh();
     }
 
     async #initSatellitesData(){
@@ -81,12 +81,12 @@ class SatellitesController{
         console.log(`Skipped ${skippedCount} out of ${totalCount} satellites.`);
     }
 
-    makeSatellitesInstancedMesh(){
+    #makeSatellitesInstancedMesh(){
         const geometryRadius = SATELLITE_SIZE_KM * this.#state.getGlobeRadius() / helper.EARTH_RADIUS_KM / 2;
         const satelliteGeometry =  new THREE.IcosahedronGeometry(geometryRadius, 1);
         const satelliteMaterial = new THREE.MeshLambertMaterial({ color: 'grey', transparent: false, opacity: 1 });
         // (Satellites use a single InstancedMesh for performance):
-        this.#satelliteInstancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, 30000);
+        this.#satelliteInstancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, this.#satellitesData.length);
         this.#satelliteInstancedMesh.frustumCulled = false; // meshes disappear at certain camera rotations/distances with frustrum culling.
 
         for (let satelliteId = 0; satelliteId < this.#satellitesData.length; satelliteId++){
@@ -96,7 +96,7 @@ class SatellitesController{
 
         this.#eventHandler.subscribeRaycastTargets(this.#onSatelliteHover.bind(this), this.#onSatelliteUnhover.bind(this), this.#onSatelliteFocus.bind(this), this.#onSatelliteUnfocus.bind(this), this.#satelliteInstancedMesh);
 
-        return this.#satelliteInstancedMesh;
+        this.#state.addThreeObjectToScene(this.#satelliteInstancedMesh);
     }
 
     updateSatellites(){
@@ -111,6 +111,9 @@ class SatellitesController{
     }
 
     #updatePositions(){
+        if (!this.#satelliteInstancedMesh)
+            return; // Return if not yet loaded satellites.
+
         const time = new Date();
         const gmst = satellite.gstime(time);
         

@@ -13,6 +13,10 @@ class SharedState{
     getCoords(lat, lng, alt){
         return this.#engine.globe.getCoords(lat, lng, alt);
     }
+
+    addThreeObjectToScene(threeObj){
+        this.#engine.scene.add(threeObj);
+    }
 }
 
 export { SharedState as default };

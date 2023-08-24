@@ -44,14 +44,14 @@ async function init(){
     await issController.initIss();
     const issThreeGlobeObjs = issController.getIssObjectsData();
 
-    await satellitesController.initSatellites();
-    const satellitesInstancedMesh = satellitesController.makeSatellitesInstancedMesh();
+    // Purposefully fire-and-forget so that the page is not stalled by the satellites loading.
+    // TODO refactor flow.
+    satellitesController.initSatellites();
 
     // TODO refactor - scary coupling.
     threeGlobeObjs = issThreeGlobeObjs;
     integratePathVisuals();
     integrateThreeGlobeObjectVisuals();
-    integrateRawThreeJsObjectVisuals(satellitesInstancedMesh);
 }
 
 function integratePathVisuals(){
@@ -67,11 +67,6 @@ function integrateThreeGlobeObjectVisuals(){
         return issController.getIssThreeObject(obj.typeId);
     });
 }
-
-function integrateRawThreeJsObjectVisuals(satellitesInstancedMesh){
-    engine.scene.add(satellitesInstancedMesh);
-}
-
 
 function update(){
     updatePaths();

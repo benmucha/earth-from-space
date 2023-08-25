@@ -72,7 +72,7 @@ class IssController{
     async #loadIssModel(){
         this.#issModelMesh = await new Promise(resolve => {
             var loader = new GLTFLoader();
-            loader.load('./resources/ISS_stationary.glb', (gltf) => {
+            loader.load('./assets/ISS_stationary.glb', (gltf) => {
                 const issModel = gltf.scene;
 
                 const box = new THREE.Box3().setFromObject(issModel); 

@@ -5,19 +5,19 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   mode: 'development',
-  entry: './manager.js',
+  entry: './src/index.js',
   output: {
     filename: 'main.js',
     path: path.resolve(__dirname, 'dist'),
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: 'index.html'
+      template: './src/index.html'
     }),
     new MiniCssExtractPlugin(),
     new CopyPlugin({
       patterns: [
-        { from: './resources', to: 'resources' },
+        { from: './src/assets', to: 'assets' },
       ],
     }),
   ],
